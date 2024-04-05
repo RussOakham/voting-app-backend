@@ -28,6 +28,7 @@ if (!accessKeyId || !secretAccessKey || !AWS_DEFAULT_REGION) {
   throw new Error("AWS credentials not found in environment variables");
 }
 
+// Create DynamoDB client
 const dynamoClient = new DynamoDBClient({
   region: AWS_DEFAULT_REGION,
   credentials: {
@@ -36,19 +37,21 @@ const dynamoClient = new DynamoDBClient({
   },
 });
 
+// Create DynamoDB Document client
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-const checkOrCreateTable = async () => {
+// Programmatic function calls
+const checkOrCreateTable = async (tableName: string) => {
   try {
-    dynamoClient.send(new DescribeTableCommand({ TableName: TABLE_NAME }));
-    console.log(`[dynamo]: Table ${TABLE_NAME} already exists`);
+    dynamoClient.send(new DescribeTableCommand({ TableName: tableName }));
+    console.log(`[dynamo]: Table ${tableName} already exists`);
   } catch (error: unknown) {
-    console.log(`[dynamo]: Table ${TABLE_NAME} does not exist. Creating...`);
+    console.log(`[dynamo]: Table ${tableName} does not exist. Creating...`);
 
     if (error instanceof ResourceNotFoundException) {
       // Create table
       const createTableParams: CreateTableCommandInput = {
-        TableName: TABLE_NAME,
+        TableName: tableName,
         KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
         ProvisionedThroughput: {
@@ -58,16 +61,16 @@ const checkOrCreateTable = async () => {
       };
 
       dynamoClient.send(new CreateTableCommand(createTableParams));
-      console.log(`[dynamo]: Table ${TABLE_NAME} created successfully`);
+      console.log(`[dynamo]: Table ${tableName} created successfully`);
     } else {
       throw error;
     }
   }
 };
 
-const getTableInfo = async () => {
+const getTableInfo = async (tableName: string) => {
   const params: ScanCommandInput = {
-    TableName: TABLE_NAME,
+    TableName: tableName,
   };
 
   try {
