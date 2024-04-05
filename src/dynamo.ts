@@ -9,8 +9,12 @@ import {
   DynamoDBDocumentClient,
   ScanCommand,
   ScanCommandInput,
+  PutCommand,
+  PutCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 import dotenv from "dotenv";
+
+import { Poll } from "./dynamo.types";
 
 dotenv.config();
 
@@ -25,7 +29,9 @@ console.log(`[dynamo]: Secret Access Key: ${secretAccessKey}`);
 console.log(`[dynamo]: AWS Region: ${AWS_DEFAULT_REGION}`);
 
 if (!accessKeyId || !secretAccessKey || !AWS_DEFAULT_REGION) {
-  throw new Error("AWS credentials not found in environment variables");
+  throw new Error(
+    "[dynamo]: AWS credentials not found in environment variables"
+  );
 }
 
 // Create DynamoDB client
@@ -39,6 +45,9 @@ const dynamoClient = new DynamoDBClient({
 
 // Create DynamoDB Document client
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+
+// Update for improved error handling:
+// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/programming-with-javascript.html#programming-with-javascript-error-handling
 
 // Programmatic function calls
 const checkOrCreateTable = async (tableName: string) => {
@@ -79,6 +88,21 @@ const getTableInfo = async (tableName: string) => {
     return table;
   } catch (error) {
     console.error(`[dynamo]: Error getting table info: ${error}`);
+    return null;
+  }
+};
+
+const createPoll = async (poll: Poll) => {
+  const params: PutCommandInput = {
+    TableName: TABLE_NAME,
+    Item: poll,
+  };
+
+  try {
+    const result = await dynamoDocClient.send(new PutCommand(params));
+    return result;
+  } catch (error) {
+    console.error(`[dynamo]: Error creating poll: ${error}`);
     return null;
   }
 };
