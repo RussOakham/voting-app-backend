@@ -49,9 +49,9 @@ export const checkOrCreateTable = async (req: Request, res: Response) => {
 	}
 }
 
-export const getTableInfo = async (req: Request, res: Response) => {
+export const getPolls = async (req: Request, res: Response) => {
 	try {
-		const { tableName } = req.body
+		const tableName = TABLE_NAME
 
 		if (!tableName) {
 			return res.status(400).json({ message: 'Missing required fields' })
