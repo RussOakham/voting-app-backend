@@ -1,7 +1,7 @@
-import { type Router } from "express";
+import { type Router } from 'express'
 
-import { createPoll } from "../controllers/polls";
+import { createPoll } from '../controllers/polls'
 
 export default (router: Router) => {
-  router.post("/polls", createPoll);
-};
+	router.post('/polls', createPoll)
+}
