@@ -5,7 +5,7 @@ import {
   ICognitoUserPoolData,
 } from "amazon-cognito-identity-js";
 import dotenv from "dotenv";
-import { RegisterUser as RegisterUserInput } from "./authentication.types";
+import { RegisterUser as RegisterUserInput } from "../models/authentication.types";
 
 dotenv.config();
 
