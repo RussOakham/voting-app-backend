@@ -9,7 +9,7 @@ const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const AWS_DEFAULT_REGION = process.env.AWS_DEFAULT_REGION;
 
-const TABLE_NAME = "voting-app-api";
+export const TABLE_NAME = "voting-app-api";
 
 console.log(`[dynamo]: Access Key ID: ${accessKeyId}`);
 console.log(`[dynamo]: Secret Access Key: ${secretAccessKey}`);
