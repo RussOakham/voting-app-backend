@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import cors from "cors";
 
+import pollsRoutes from "./polls/routes";
+
 dotenv.config();
 
 const app: Express = express();
@@ -30,3 +32,13 @@ const server = http.createServer(app);
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
 });
+
+const router = () => {
+  const router = express.Router();
+
+  pollsRoutes(router);
+
+  return router;
+};
+
+app.use("/", router());

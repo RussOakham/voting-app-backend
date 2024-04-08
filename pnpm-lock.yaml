@@ -14,6 +14,9 @@ dependencies:
   '@aws-sdk/lib-dynamodb':
     specifier: ^3.549.0
     version: 3.549.0(@aws-sdk/client-dynamodb@3.549.0)
+  '@types/uuid':
+    specifier: ^9.0.8
+    version: 9.0.8
   amazon-cognito-identity-js:
     specifier: ^6.3.12
     version: 6.3.12
@@ -44,6 +47,9 @@ dependencies:
   node-fetch:
     specifier: ^3.3.2
     version: 3.3.2
+  uuid:
+    specifier: ^9.0.1
+    version: 9.0.1
   zod:
     specifier: ^3.22.4
     version: 3.22.4
@@ -1160,6 +1166,10 @@ packages:
       '@types/node': 20.12.4
       '@types/send': 0.17.4
     dev: true
+
+  /@types/uuid@9.0.8:
+    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
+    dev: false
 
   /abbrev@1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}

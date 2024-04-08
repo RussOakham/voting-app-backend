@@ -16,6 +16,7 @@
     "@aws-sdk/client-cognito-identity": "^3.549.0",
     "@aws-sdk/client-dynamodb": "^3.549.0",
     "@aws-sdk/lib-dynamodb": "^3.549.0",
+    "@types/uuid": "^9.0.8",
     "amazon-cognito-identity-js": "^6.3.12",
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",
@@ -26,6 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "jwk-to-pem": "^2.0.5",
     "node-fetch": "^3.3.2",
+    "uuid": "^9.0.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

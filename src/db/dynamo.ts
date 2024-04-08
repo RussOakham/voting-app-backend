@@ -11,15 +11,23 @@ const AWS_DEFAULT_REGION = process.env.AWS_DEFAULT_REGION;
 
 export const TABLE_NAME = "voting-app-api";
 
-console.log(`[dynamo]: Access Key ID: ${accessKeyId}`);
-console.log(`[dynamo]: Secret Access Key: ${secretAccessKey}`);
-console.log(`[dynamo]: AWS Region: ${AWS_DEFAULT_REGION}`);
-
 if (!accessKeyId || !secretAccessKey || !AWS_DEFAULT_REGION) {
   throw new Error(
     "[dynamo]: AWS credentials not found in environment variables"
   );
 }
+
+export interface MarshallOptions {
+  removeUndefinedValues?: boolean;
+  convertClassInstanceToMap?: boolean;
+}
+
+const marshallOptions: MarshallOptions = {
+  removeUndefinedValues: true,
+  convertClassInstanceToMap: true,
+};
+
+const translateConfig = { marshallOptions };
 
 // Create DynamoDB client
 export const dynamoClient = new DynamoDBClient({
@@ -31,7 +39,10 @@ export const dynamoClient = new DynamoDBClient({
 });
 
 // Create DynamoDB Document client
-export const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+export const dynamoDocClient = DynamoDBDocumentClient.from(
+  dynamoClient,
+  translateConfig
+);
 
 // Update for improved error handling:
 // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/programming-with-javascript.html#programming-with-javascript-error-handling
