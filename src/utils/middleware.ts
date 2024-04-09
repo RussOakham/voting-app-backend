@@ -7,12 +7,10 @@ export const validateData =
 	(schema: AnyZodObject) =>
 	async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			console.log(req.body)
 			await schema.parseAsync(req.body)
 			return next()
 		} catch (error) {
 			if (error instanceof ZodError) {
-				console.log('zodError')
 				const errorMessages = error.errors.map((issue) => ({
 					message: `${issue.path.join('.')} is ${issue.message}`,
 				}))
