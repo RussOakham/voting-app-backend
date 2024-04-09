@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const pollSchema = z.object({
+export const pollSchema = z.object({
 	question: z.string({
 		required_error: 'Question is required',
 	}),
@@ -13,7 +13,7 @@ const pollSchema = z.object({
 		.max(5, 'At most 5 options are allowed'),
 })
 
-const votesSchema = z.object({
+export const votesSchema = z.object({
 	votes: z.record(z.number(), z.number()),
 })
 

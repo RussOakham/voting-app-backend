@@ -1,8 +1,10 @@
 import { type Router } from 'express'
 
 import { createPoll, getPolls } from '../controllers/polls'
+import { validateData } from 'utils/middleware'
+import { pollSchema } from 'polls/models/polls.types'
 
 export default (router: Router) => {
 	router.get('/polls', getPolls)
-	router.post('/create-poll', createPoll)
+	router.post('/create-poll', validateData(pollSchema), createPoll)
 }

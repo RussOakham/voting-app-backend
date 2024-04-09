@@ -9,6 +9,7 @@ import {
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
 import { Request, Response } from 'express'
 import { v1 as uuidV1 } from 'uuid'
+import { StatusCodes } from 'http-status-codes'
 
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
 import { Poll } from '../models/polls.types'
@@ -18,12 +19,16 @@ export const checkOrCreateTable = async (req: Request, res: Response) => {
 	const { tableName } = req.body
 	try {
 		if (!tableName) {
-			return res.status(400).json({ message: 'Missing required fields ' })
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Missing required fields ' })
 		}
 
 		dynamoClient.send(new DescribeTableCommand({ TableName: tableName }))
 		console.log(`[dynamo]: Table ${tableName} already exists`)
-		return res.status(409).json({ message: 'Table already exists' })
+		return res
+			.status(StatusCodes.CONFLICT)
+			.json({ message: 'Table already exists' })
 	} catch (error: unknown) {
 		console.log(`[dynamo]: Table ${tableName} does not exist. Creating...`)
 
@@ -41,10 +46,14 @@ export const checkOrCreateTable = async (req: Request, res: Response) => {
 
 			dynamoClient.send(new CreateTableCommand(createTableParams))
 			console.log(`[dynamo]: Table ${tableName} created successfully`)
-			return res.status(201).json({ message: 'Table created successfully' })
+			return res
+				.status(StatusCodes.CREATED)
+				.json({ message: 'Table created successfully' })
 		} else {
 			console.error(`[dynamo]: Error creating table: ${error}`)
-			return res.status(400).json({ message: 'Error creating table ' })
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Error creating table ' })
 		}
 	}
 }
@@ -54,7 +63,9 @@ export const getPolls = async (req: Request, res: Response) => {
 		const tableName = TABLE_NAME
 
 		if (!tableName) {
-			return res.status(400).json({ message: 'Missing required fields' })
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Missing required fields' })
 		}
 
 		const params: ScanCommandInput = {
@@ -63,10 +74,12 @@ export const getPolls = async (req: Request, res: Response) => {
 
 		const result = await dynamoDocClient.send(new ScanCommand(params))
 
-		return res.status(200).json(result)
+		return res.status(StatusCodes.OK).json(result)
 	} catch (error) {
 		console.error(`[dynamo]: Error getting table info: ${error}`)
-		return res.status(400).json({ message: 'Error fetching table data' })
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ message: 'Error fetching table data' })
 	}
 }
 
@@ -75,7 +88,9 @@ export const createPoll = async (req: Request, res: Response) => {
 		const { question, options } = req.body
 
 		if (!question || !options) {
-			return res.status(400).json({ message: 'Missing required fields' })
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Missing required fields' })
 		}
 
 		const poll: Poll = {
@@ -104,9 +119,11 @@ export const createPoll = async (req: Request, res: Response) => {
 
 		const result = await dynamoDocClient.send(new PutItemCommand(params))
 
-		return res.status(201).json(result)
+		return res.status(StatusCodes.CREATED).json(result)
 	} catch (error) {
 		console.error(`[dynamo]: Error creating poll: ${error}`)
-		return res.status(400).json({ message: 'Error creating poll' })
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ message: 'Error creating poll' })
 	}
 }
