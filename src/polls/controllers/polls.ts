@@ -12,7 +12,7 @@ import { v1 as uuidV1 } from 'uuid'
 import { StatusCodes } from 'http-status-codes'
 
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
-import { Poll } from '../models/polls.types'
+import { CreatePoll } from '../models/polls.types'
 
 // Programmatic function calls
 export const checkOrCreateTable = async (req: Request, res: Response) => {
@@ -85,7 +85,7 @@ export const getPolls = async (req: Request, res: Response) => {
 
 export const createPoll = async (req: Request, res: Response) => {
 	try {
-		const { question, options } = req.body
+		const { question, options, votes } = req.body
 
 		if (!question || !options) {
 			return res
@@ -93,9 +93,10 @@ export const createPoll = async (req: Request, res: Response) => {
 				.json({ message: 'Missing required fields' })
 		}
 
-		const poll: Poll = {
+		const poll: CreatePoll = {
 			question,
 			options,
+			votes,
 		}
 
 		const uuid = uuidV1()
@@ -106,11 +107,15 @@ export const createPoll = async (req: Request, res: Response) => {
 				id: { S: uuid },
 				question: { S: poll.question },
 				options: {
-					L: [
-						...poll.options.map((option) => ({
-							S: option,
-						})),
-					],
+					L: poll.options.map((option) => ({
+						M: {
+							id: { S: option.id },
+							text: { S: option.text },
+						},
+					})),
+				},
+				votes: {
+					L: [],
 				},
 			},
 		}

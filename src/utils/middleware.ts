@@ -7,22 +7,20 @@ export const validateData =
 	(schema: AnyZodObject) =>
 	async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			await schema.parseAsync({
-				body: req.body,
-				query: req.query,
-				params: req.params,
-			})
+			console.log(req.body)
+			await schema.parseAsync(req.body)
 			return next()
 		} catch (error) {
 			if (error instanceof ZodError) {
+				console.log('zodError')
 				const errorMessages = error.errors.map((issue) => ({
 					message: `${issue.path.join('.')} is ${issue.message}`,
 				}))
 				res
 					.status(StatusCodes.BAD_REQUEST)
-					.json({ error: 'Invalid data', details: errorMessages })
+					.json({ error: 'Invalid data', message: errorMessages })
 				console.error(
-					`[middleware-validation]: Error Invalid Data: ${errorMessages}`,
+					`[middleware-validation]: Error Invalid Data: ${JSON.stringify(errorMessages)}`,
 				)
 			} else {
 				res
