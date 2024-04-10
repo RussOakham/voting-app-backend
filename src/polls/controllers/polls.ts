@@ -117,6 +117,7 @@ export const createPoll = async (req: Request, res: Response) => {
 
 		const uuid = uuidV1()
 
+		// TODO: Only create if the poll.id does not exist in db
 		const params: PutItemCommandInput = {
 			TableName: TABLE_NAME,
 			Item: {
@@ -189,6 +190,7 @@ export const submitVote = async (req: Request, res: Response) => {
 			createdAt: new Date().toISOString(),
 		})
 
+		// TODO: only update if the poll.id exists in db
 		const params: UpdateItemCommandInput = {
 			TableName: TABLE_NAME,
 			Key: {
