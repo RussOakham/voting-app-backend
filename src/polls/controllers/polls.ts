@@ -90,9 +90,15 @@ export const createPoll = async (req: Request, res: Response) => {
 		const { question, options, votes, createdBy } = req.body
 
 		if (!question || !options) {
+			const missingFields = !question
+				? 'question, '
+				: '' + !options
+					? 'options, '
+					: ''
+
 			return res
 				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: 'Missing required fields' })
+				.json({ message: `Missing required fields: ${missingFields}` })
 		}
 
 		// type check poll against Poll but without the id
