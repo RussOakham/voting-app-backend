@@ -148,12 +148,20 @@ export const createPoll = async (req: Request, res: Response) => {
 
 export const submitVote = async (req: Request, res: Response) => {
 	try {
-		const { id, votes, submittedVote } = req.body
+		const { pollId, votes, submittedVote } = req.body
 
-		if (!id || !votes || !submittedVote) {
+		if (!pollId || !votes || !submittedVote) {
+			const missingFields = !pollId
+				? 'pollId, '
+				: '' + !votes
+					? 'votes, '
+					: '' + !submittedVote
+						? 'submittedVote, '
+						: ''
+
 			return res
 				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: 'Missing required fields' })
+				.json({ message: `Missing required fields: ${missingFields}` })
 		}
 
 		// type check poll against Poll but without the id
@@ -162,7 +170,7 @@ export const submitVote = async (req: Request, res: Response) => {
 		type PollUpdateVotes = Pick<Poll, 'id' | 'votes'>
 
 		const pollUpdate: PollUpdateVotes = {
-			id,
+			id: pollId,
 			votes,
 		}
 
