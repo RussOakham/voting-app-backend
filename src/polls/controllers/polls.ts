@@ -4,6 +4,8 @@ import {
 	DescribeTableCommand,
 	PutItemCommand,
 	PutItemCommandInput,
+	UpdateItemCommand,
+	UpdateItemCommandInput,
 	ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
@@ -136,10 +138,65 @@ export const createPoll = async (req: Request, res: Response) => {
 		const result = await dynamoDocClient.send(new PutItemCommand(params))
 
 		return res.status(StatusCodes.CREATED).json(result)
-	} catch (error) {
+	} catch (error: unknown) {
 		console.error(`[dynamo]: Error creating poll: ${error}`)
 		return res
 			.status(StatusCodes.BAD_REQUEST)
 			.json({ message: 'Error creating poll' })
+	}
+}
+
+export const submitVote = async (req: Request, res: Response) => {
+	try {
+		const { id, votes, submittedVote } = req.body
+
+		if (!id || !votes || !submittedVote) {
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Missing required fields' })
+		}
+
+		// type check poll against Poll but without the id
+		// this is because the id is generated in the function
+
+		type PollUpdateVotes = Pick<Poll, 'id' | 'votes'>
+
+		const poll: PollUpdateVotes = {
+			id,
+			votes,
+		}
+
+		const updatedVotes = [...poll.votes, submittedVote]
+
+		const params: UpdateItemCommandInput = {
+			TableName: TABLE_NAME,
+			Key: {
+				id: { S: poll.id },
+			},
+			UpdateExpression: 'SET votes = :votes',
+			ExpressionAttributeValues: {
+				':votes': {
+					L: updatedVotes.map((vote) => ({
+						M: {
+							id: { S: vote.id },
+							option: { S: vote.option },
+							user: { S: vote.user },
+							createdAt: { S: new Date().toISOString() },
+						},
+					})),
+				},
+			},
+		}
+
+		console.log(`[dynamo]: Submitting vote: ${JSON.stringify(submittedVote)}`)
+
+		const result = await dynamoDocClient.send(new UpdateItemCommand(params))
+
+		return res.status(StatusCodes.OK).json(result)
+	} catch (error: unknown) {
+		console.error(`[dynamo]: Error submitting vote: ${error}`)
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ message: 'Error submitting vote' })
 	}
 }
