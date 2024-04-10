@@ -14,7 +14,7 @@ import { v1 as uuidV1 } from 'uuid'
 import { StatusCodes } from 'http-status-codes'
 
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
-import { Poll } from '../models/polls.types'
+import { Poll, SubmittedVote } from '../models/polls.types'
 
 // Programmatic function calls
 export const checkOrCreateTable = async (req: Request, res: Response) => {
@@ -161,27 +161,34 @@ export const submitVote = async (req: Request, res: Response) => {
 
 		type PollUpdateVotes = Pick<Poll, 'id' | 'votes'>
 
-		const poll: PollUpdateVotes = {
+		const pollUpdate: PollUpdateVotes = {
 			id,
 			votes,
 		}
 
-		const updatedVotes = [...poll.votes, submittedVote]
+		const newVote: SubmittedVote = submittedVote
+
+		pollUpdate.votes.push({
+			id: uuidV1(),
+			option: newVote.optionText,
+			user: newVote.userId,
+			createdAt: new Date().toISOString(),
+		})
 
 		const params: UpdateItemCommandInput = {
 			TableName: TABLE_NAME,
 			Key: {
-				id: { S: poll.id },
+				id: { S: pollUpdate.id },
 			},
 			UpdateExpression: 'SET votes = :votes',
 			ExpressionAttributeValues: {
 				':votes': {
-					L: updatedVotes.map((vote) => ({
+					L: pollUpdate.votes.map((vote) => ({
 						M: {
 							id: { S: vote.id },
 							option: { S: vote.option },
 							user: { S: vote.user },
-							createdAt: { S: new Date().toISOString() },
+							createdAt: { S: vote.createdAt },
 						},
 					})),
 				},
