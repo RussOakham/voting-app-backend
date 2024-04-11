@@ -15,6 +15,9 @@ import { StatusCodes } from 'http-status-codes'
 
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
 import { Poll, SubmittedVote } from '../models/polls.types'
+import { pino } from '../../utils/logger'
+
+const { logger } = pino
 
 // Programmatic function calls
 export const checkOrCreateTable = async (req: Request, res: Response) => {
@@ -27,12 +30,12 @@ export const checkOrCreateTable = async (req: Request, res: Response) => {
 		}
 
 		dynamoClient.send(new DescribeTableCommand({ TableName: tableName }))
-		console.log(`[dynamo]: Table ${tableName} already exists`)
+		logger.warn(`[dynamo]: Table ${tableName} already exists`)
 		return res
 			.status(StatusCodes.CONFLICT)
 			.json({ message: 'Table already exists' })
 	} catch (error: unknown) {
-		console.log(`[dynamo]: Table ${tableName} does not exist. Creating...`)
+		logger.info(`[dynamo]: Table ${tableName} does not exist. Creating...`)
 
 		if (error instanceof ResourceNotFoundException) {
 			// Create table
@@ -47,12 +50,12 @@ export const checkOrCreateTable = async (req: Request, res: Response) => {
 			}
 
 			dynamoClient.send(new CreateTableCommand(createTableParams))
-			console.log(`[dynamo]: Table ${tableName} created successfully`)
+			logger.info(`[dynamo]: Table ${tableName} created successfully`)
 			return res
 				.status(StatusCodes.CREATED)
 				.json({ message: 'Table created successfully' })
 		} else {
-			console.error(`[dynamo]: Error creating table: ${error}`)
+			logger.error(`[dynamo]: Error creating table: ${error}`)
 			return res
 				.status(StatusCodes.BAD_REQUEST)
 				.json({ message: 'Error creating table ' })
@@ -140,13 +143,13 @@ export const createPoll = async (req: Request, res: Response) => {
 			},
 		}
 
-		console.log(`[dynamo]: Creating poll: ${JSON.stringify(poll)}`)
-
 		const result = await dynamoDocClient.send(new PutItemCommand(params))
+
+		logger.info(`[dynamo]: Created poll: ${JSON.stringify(poll)}`)
 
 		return res.status(StatusCodes.CREATED).json(result)
 	} catch (error: unknown) {
-		console.error(`[dynamo]: Error creating poll: ${error}`)
+		logger.error(`[dynamo]: Error creating poll: ${error}`)
 		return res
 			.status(StatusCodes.BAD_REQUEST)
 			.json({ message: 'Error creating poll' })
@@ -211,9 +214,9 @@ export const submitVote = async (req: Request, res: Response) => {
 			},
 		}
 
-		console.log(`[dynamo]: Submitting vote: ${JSON.stringify(submittedVote)}`)
-
 		const result = await dynamoDocClient.send(new UpdateItemCommand(params))
+
+		logger.info(`[dynamo]: Submitted vote: ${JSON.stringify(submittedVote)}`)
 
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error: unknown) {

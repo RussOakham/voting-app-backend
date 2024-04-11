@@ -7,11 +7,14 @@ import {
 import dotenv from 'dotenv'
 
 import { RegisterUser as RegisterUserInput } from '../models/authentication.types'
+import { pino } from '../../utils/logger'
 
 dotenv.config()
 
 const cognitoClientId = process.env.AWS_COGNITO_CLIENT_ID
 const userPoolId = process.env.AWS_USER_POOL_ID
+
+const { logger } = pino
 
 if (!cognitoClientId || !userPoolId) {
 	throw new Error(
@@ -54,17 +57,17 @@ export const RegisterUser = (userInfo: RegisterUserInput) => {
 		[],
 		(err, result) => {
 			if (err) {
-				console.log(`[cognito]: Error during signup ${err}`)
+				logger.error(`[cognito]: Error during signup ${err}`)
 				return
 			}
 
 			if (!result) {
-				console.log(`[cognito]: No result returned from signup`)
+				logger.warn(`[cognito]: No result returned from signup`)
 				return
 			}
 
 			const cognitoUser = result.user
-			console.log(`[cognito]: New username is ${cognitoUser.getUsername()}`)
+			logger.info(`[cognito]: New username is ${cognitoUser.getUsername()}`)
 		},
 	)
 }
