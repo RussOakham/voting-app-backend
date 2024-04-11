@@ -33,6 +33,7 @@
 		"pino-http": "^9.0.0",
 		"pino-pretty": "^11.0.0",
 		"plugin": "link:@typescript-eslint/eslint/plugin",
+		"socket.io": "^4.7.5",
 		"uuid": "^9.0.1",
 		"zod": "^3.22.4"
 	},

@@ -4,8 +4,9 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import express, { Express } from 'express'
-import http from 'http'
 import { pino } from './utils/logger'
+import { io as ioSocket } from './utils/socket'
+import { createServer } from 'http'
 
 import pollsRoutes from './polls/routes'
 
@@ -30,13 +31,6 @@ app.use(
 app.use(bodyParser.json())
 app.use(pino)
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const server = http.createServer(app)
-
-app.listen(port, () => {
-	logger.info(`[server]: Server is running at http://localhost:${port}`)
-})
-
 const router = () => {
 	const router = express.Router()
 
@@ -46,3 +40,18 @@ const router = () => {
 }
 
 app.use('/', router())
+
+const httpServer = createServer(app)
+
+const io = ioSocket.init(httpServer)
+
+io.on('connection', (socket) => {
+	logger.info(`[socket]: Socket connected ${socket.id}`)
+	socket.on('disconnect', () => {
+		logger.info(`[socket]: Socket disconnected ${socket.id}`)
+	})
+})
+
+httpServer.listen(port, () => {
+	logger.info(`[server]: Server is running at http://localhost:${port}`)
+})

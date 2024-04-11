@@ -16,6 +16,7 @@ import { StatusCodes } from 'http-status-codes'
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
 import { Poll, SubmittedVote } from '../models/polls.types'
 import { pino } from '../../utils/logger'
+import { io } from '../../utils/socket'
 
 const { logger } = pino
 
@@ -147,6 +148,13 @@ export const createPoll = async (req: Request, res: Response) => {
 
 		logger.info(`[dynamo]: Created poll: ${JSON.stringify(poll)}`)
 
+		// Create Type for this.
+		io.getIo().emit('message', {
+			key: 'polls',
+			action: 'create',
+			data: poll,
+		})
+
 		return res.status(StatusCodes.CREATED).json(result)
 	} catch (error: unknown) {
 		logger.error(`[dynamo]: Error creating poll: ${error}`)
@@ -217,6 +225,12 @@ export const submitVote = async (req: Request, res: Response) => {
 		const result = await dynamoDocClient.send(new UpdateItemCommand(params))
 
 		logger.info(`[dynamo]: Submitted vote: ${JSON.stringify(submittedVote)}`)
+
+		io.getIo().emit('message', {
+			key: 'polls',
+			action: 'vote',
+			data: pollUpdate,
+		})
 
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error: unknown) {
