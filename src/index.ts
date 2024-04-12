@@ -8,7 +8,7 @@ import { pino } from './utils/logger'
 import { io as ioSocket } from './utils/socket'
 import { createServer } from 'http'
 
-import pollsRoutes from './polls/routes'
+import pollsRoutes from './polls/routes/polls.routes'
 
 dotenv.config()
 

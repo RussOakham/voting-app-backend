@@ -2,6 +2,8 @@ import {
 	CreateTableCommand,
 	CreateTableCommandInput,
 	DescribeTableCommand,
+	GetItemCommand,
+	GetItemCommandInput,
 	PutItemCommand,
 	PutItemCommandInput,
 	UpdateItemCommand,
@@ -9,6 +11,7 @@ import {
 	ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { Request, Response } from 'express'
 import { v1 as uuidV1 } from 'uuid'
 import { StatusCodes } from 'http-status-codes'
@@ -16,7 +19,7 @@ import { StatusCodes } from 'http-status-codes'
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
 import { Poll, SubmittedVote } from '../models/polls.types'
 import { pino } from '../../utils/logger'
-import { io } from '../../utils/socket'
+import { io, SocketPayload } from '../../utils/socket'
 
 const { logger } = pino
 
@@ -82,10 +85,44 @@ export const getPolls = async (req: Request, res: Response) => {
 
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error) {
-		console.error(`[dynamo]: Error getting table info: ${error}`)
+		logger.error(`[dynamo]: Error getting table info: ${error}`)
 		return res
 			.status(StatusCodes.BAD_REQUEST)
 			.json({ message: 'Error fetching table data' })
+	}
+}
+
+export const getPollById = async (req: Request, res: Response) => {
+	try {
+		const { pollId } = req.params
+
+		if (!pollId) {
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Missing required fields' })
+		}
+
+		const params: GetItemCommandInput = {
+			TableName: TABLE_NAME,
+			Key: marshall({ id: pollId }),
+		}
+
+		const result = await dynamoDocClient.send(new GetItemCommand(params))
+
+		const poll = result.Item
+
+		if (!poll) {
+			return res
+				.status(StatusCodes.NOT_FOUND)
+				.json({ message: 'Poll not found' })
+		}
+
+		return res.status(StatusCodes.OK).json(unmarshall(poll))
+	} catch (error) {
+		logger.error(`[dynamo]: Error getting poll by id: ${error}`)
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ message: 'Error fetching poll by id' })
 	}
 }
 
@@ -121,39 +158,23 @@ export const createPoll = async (req: Request, res: Response) => {
 
 		const uuid = uuidV1()
 
-		// TODO: Only create if the poll.id does not exist in db
 		const params: PutItemCommandInput = {
 			TableName: TABLE_NAME,
-			Item: {
-				id: { S: uuid },
-				question: { S: poll.question },
-				options: {
-					L: poll.options.map((option) => ({
-						M: {
-							id: { S: option.id },
-							text: { S: option.text },
-						},
-					})),
-				},
-				votes: {
-					L: [],
-				},
-				createdBy: { S: poll.createdBy },
-				createdAt: { S: poll.createdAt },
-				updatedAt: { S: poll.updatedAt },
-			},
+			Item: marshall({ id: uuid, ...poll }),
+			ConditionExpression: 'attribute_not_exists(id)',
 		}
 
 		const result = await dynamoDocClient.send(new PutItemCommand(params))
 
 		logger.info(`[dynamo]: Created poll: ${JSON.stringify(poll)}`)
 
-		// Create Type for this.
-		io.getIo().emit('message', {
+		const socketPayload: SocketPayload = {
 			key: 'polls',
 			action: 'create',
 			data: poll,
-		})
+		}
+
+		io.getIo().emit('message', socketPayload)
 
 		return res.status(StatusCodes.CREATED).json(result)
 	} catch (error: unknown) {
@@ -201,40 +222,30 @@ export const submitVote = async (req: Request, res: Response) => {
 			createdAt: new Date().toISOString(),
 		})
 
-		// TODO: only update if the poll.id exists in db
 		const params: UpdateItemCommandInput = {
 			TableName: TABLE_NAME,
-			Key: {
-				id: { S: pollUpdate.id },
-			},
+			Key: marshall({ id: pollUpdate.id }),
 			UpdateExpression: 'SET votes = :votes',
-			ExpressionAttributeValues: {
-				':votes': {
-					L: pollUpdate.votes.map((vote) => ({
-						M: {
-							id: { S: vote.id },
-							option: { S: vote.option },
-							user: { S: vote.user },
-							createdAt: { S: vote.createdAt },
-						},
-					})),
-				},
-			},
+			ExpressionAttributeValues: marshall({ ':votes': pollUpdate.votes }),
+			ConditionExpression: 'attribute_exists(id)',
 		}
 
 		const result = await dynamoDocClient.send(new UpdateItemCommand(params))
 
 		logger.info(`[dynamo]: Submitted vote: ${JSON.stringify(submittedVote)}`)
 
-		io.getIo().emit('message', {
-			key: 'polls',
+		const socketPayload: SocketPayload = {
+			id: pollUpdate.id,
+			key: 'poll',
 			action: 'vote',
 			data: pollUpdate,
-		})
+		}
+
+		io.getIo().emit('message', socketPayload)
 
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error: unknown) {
-		console.error(`[dynamo]: Error submitting vote: ${error}`)
+		logger.error(`[dynamo]: Error submitting vote: ${error}`)
 		return res
 			.status(StatusCodes.BAD_REQUEST)
 			.json({ message: 'Error submitting vote' })

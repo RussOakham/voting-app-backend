@@ -4,6 +4,13 @@ import { Server } from 'socket.io'
 
 let ioServer: Server
 
+export interface SocketPayload {
+	id?: string
+	key: string
+	action: string
+	data: unknown
+}
+
 export const io = {
 	init: (httpSever: ServerType) => {
 		ioServer = new Server(httpSever, {

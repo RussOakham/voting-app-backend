@@ -14,6 +14,9 @@ dependencies:
   '@aws-sdk/lib-dynamodb':
     specifier: ^3.549.0
     version: 3.549.0(@aws-sdk/client-dynamodb@3.549.0)
+  '@aws-sdk/util-dynamodb':
+    specifier: ^3.554.0
+    version: 3.554.0(@aws-sdk/client-dynamodb@3.549.0)
   '@types/uuid':
     specifier: ^9.0.8
     version: 9.0.8
@@ -674,6 +677,16 @@ packages:
 
   /@aws-sdk/util-dynamodb@3.549.0(@aws-sdk/client-dynamodb@3.549.0):
     resolution: {integrity: sha512-HvJmvDNw9GN1vxWjbM7jYqv+DvQVeL21kLQ+Tth24QRPA1tiCrUuBi+lerRZ8fHG/kiZMTGyJ7UOPvljGD84dw==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      '@aws-sdk/client-dynamodb': ^3.0.0
+    dependencies:
+      '@aws-sdk/client-dynamodb': 3.549.0
+      tslib: 2.6.2
+    dev: false
+
+  /@aws-sdk/util-dynamodb@3.554.0(@aws-sdk/client-dynamodb@3.549.0):
+    resolution: {integrity: sha512-Q81Rj38Ban8iV0C1b0cOEHWVHveIW67zVyd2gJvn1xdeKz+N4zCCUviL9Dwfsi6YgOaP+eQaaCptsBA0Nrx7YA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       '@aws-sdk/client-dynamodb': ^3.0.0

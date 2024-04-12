@@ -1,5 +1,17 @@
 import { z } from 'zod'
 
+export const getPollSchema = z.object({
+	pollId: z.string(),
+})
+
+export type GetPoll = z.infer<typeof getPollSchema>
+
+export const getPollApiRequestSchema = z.object({
+	params: getPollSchema,
+})
+
+export type GetPollApiRequest = z.infer<typeof getPollApiRequestSchema>
+
 const voteSchema = z.object({
 	id: z.string(),
 	option: z.string(),
@@ -33,6 +45,12 @@ export const createPollSchema = z.object({
 
 export type CreatePoll = z.infer<typeof createPollSchema>
 
+export const createPollsApiRequestSchema = z.object({
+	body: createPollSchema,
+})
+
+export type CreatePollsApiRequest = z.infer<typeof createPollsApiRequestSchema>
+
 export const pollSchema = createPollSchema.extend({
 	id: z.string(),
 	createdAt: z.string().trim().min(1, 'createdAt is required'),
@@ -56,3 +74,9 @@ export const submitVoteSchema = z.object({
 })
 
 export type SubmitVote = z.infer<typeof submitVoteSchema>
+
+export const submitVoteApiRequestSchema = z.object({
+	body: submitVoteSchema,
+})
+
+export type SubmitVoteApiRequest = z.infer<typeof submitVoteApiRequestSchema>
