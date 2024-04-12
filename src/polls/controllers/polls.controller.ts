@@ -131,11 +131,13 @@ export const createPoll = async (req: Request, res: Response) => {
 		const { question, options, votes, createdBy } = req.body
 
 		if (!question || !options) {
-			const missingFields = !question
-				? 'question, '
-				: '' + !options
-					? 'options, '
-					: ''
+			let missingFields = ''
+			if (!question) {
+				missingFields += 'question, '
+			}
+			if (!options) {
+				missingFields += 'options, '
+			}
 
 			return res
 				.status(StatusCodes.BAD_REQUEST)
@@ -190,13 +192,16 @@ export const submitVote = async (req: Request, res: Response) => {
 		const { pollId, votes, submittedVote } = req.body
 
 		if (!pollId || !votes || !submittedVote) {
-			const missingFields = !pollId
-				? 'pollId, '
-				: '' + !votes
-					? 'votes, '
-					: '' + !submittedVote
-						? 'submittedVote, '
-						: ''
+			let missingFields = ''
+			if (!pollId) {
+				missingFields += 'pollId, '
+			}
+			if (!votes) {
+				missingFields += 'votes, '
+			}
+			if (!submittedVote) {
+				missingFields += 'submittedVote, '
+			}
 
 			return res
 				.status(StatusCodes.BAD_REQUEST)
