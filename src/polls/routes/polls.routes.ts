@@ -6,7 +6,7 @@ import {
 	getPolls,
 	submitVote,
 } from '../controllers/polls.controller'
-import { validateData } from '../../utils/middleware'
+import { validateData } from '../../utils/middlewares/validate-data.middleware'
 import {
 	createPollsApiRequestSchema,
 	getPollApiRequestSchema,

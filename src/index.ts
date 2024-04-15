@@ -9,6 +9,7 @@ import { io as ioSocket } from './utils/socket'
 import { createServer } from 'http'
 
 import pollsRoutes from './polls/routes/polls.routes'
+import { errorHandler } from './utils/middlewares/error-handler.middleware'
 
 dotenv.config()
 
@@ -51,6 +52,8 @@ io.on('connection', (socket) => {
 		logger.info(`[socket]: Socket disconnected ${socket.id}`)
 	})
 })
+
+app.use(errorHandler)
 
 httpServer.listen(port, () => {
 	logger.info(`[server]: Server is running at http://localhost:${port}`)

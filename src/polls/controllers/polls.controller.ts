@@ -12,7 +12,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { v1 as uuidV1 } from 'uuid'
 import { StatusCodes } from 'http-status-codes'
 
@@ -20,24 +20,29 @@ import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
 import { Poll, SubmittedVote } from '../models/polls.types'
 import { pino } from '../../utils/logger'
 import { io, SocketPayload } from '../../utils/socket'
+import {
+	BadRequestError,
+	ConflictError,
+	NotFoundError,
+} from '../../utils/errors'
 
 const { logger } = pino
 
 // Programmatic function calls
-export const checkOrCreateTable = async (req: Request, res: Response) => {
+export const checkOrCreateTable = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
 	const { tableName } = req.body
 	try {
 		if (!tableName) {
-			return res
-				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: 'Missing required fields ' })
+			return next(new BadRequestError('Missing required fields'))
 		}
 
 		dynamoClient.send(new DescribeTableCommand({ TableName: tableName }))
 		logger.warn(`[dynamo]: Table ${tableName} already exists`)
-		return res
-			.status(StatusCodes.CONFLICT)
-			.json({ message: 'Table already exists' })
+		return next(new ConflictError('Table already exists'))
 	} catch (error: unknown) {
 		logger.info(`[dynamo]: Table ${tableName} does not exist. Creating...`)
 
@@ -60,21 +65,21 @@ export const checkOrCreateTable = async (req: Request, res: Response) => {
 				.json({ message: 'Table created successfully' })
 		} else {
 			logger.error(`[dynamo]: Error creating table: ${error}`)
-			return res
-				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: 'Error creating table ' })
+			return next(new BadRequestError('Error creating table'))
 		}
 	}
 }
 
-export const getPolls = async (req: Request, res: Response) => {
+export const getPolls = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
 	try {
 		const tableName = TABLE_NAME
 
 		if (!tableName) {
-			return res
-				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: 'Missing required fields' })
+			return next(new BadRequestError('Missing required fields'))
 		}
 
 		const params: ScanCommandInput = {
@@ -86,13 +91,15 @@ export const getPolls = async (req: Request, res: Response) => {
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error) {
 		logger.error(`[dynamo]: Error getting table info: ${error}`)
-		return res
-			.status(StatusCodes.BAD_REQUEST)
-			.json({ message: 'Error fetching table data' })
+		return next(new NotFoundError('Error fetching table data'))
 	}
 }
 
-export const getPollById = async (req: Request, res: Response) => {
+export const getPollById = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
 	try {
 		const { pollId } = req.params
 
@@ -112,21 +119,21 @@ export const getPollById = async (req: Request, res: Response) => {
 		const poll = result.Item
 
 		if (!poll) {
-			return res
-				.status(StatusCodes.NOT_FOUND)
-				.json({ message: 'Poll not found' })
+			return next(new NotFoundError('Poll not found'))
 		}
 
 		return res.status(StatusCodes.OK).json(unmarshall(poll))
 	} catch (error) {
 		logger.error(`[dynamo]: Error getting poll by id: ${error}`)
-		return res
-			.status(StatusCodes.BAD_REQUEST)
-			.json({ message: 'Error fetching poll by id' })
+		return next(new NotFoundError('Error fetching poll data by id'))
 	}
 }
 
-export const createPoll = async (req: Request, res: Response) => {
+export const createPoll = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
 	try {
 		const { question, options, votes, createdBy } = req.body
 
@@ -139,9 +146,9 @@ export const createPoll = async (req: Request, res: Response) => {
 				missingFields += 'options, '
 			}
 
-			return res
-				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: `Missing required fields: ${missingFields}` })
+			return next(
+				new BadRequestError(`Missing required fields: ${missingFields}`),
+			)
 		}
 
 		// type check poll against Poll but without the id
@@ -181,13 +188,15 @@ export const createPoll = async (req: Request, res: Response) => {
 		return res.status(StatusCodes.CREATED).json(result)
 	} catch (error: unknown) {
 		logger.error(`[dynamo]: Error creating poll: ${error}`)
-		return res
-			.status(StatusCodes.BAD_REQUEST)
-			.json({ message: 'Error creating poll' })
+		return next(new BadRequestError('Error creating poll'))
 	}
 }
 
-export const submitVote = async (req: Request, res: Response) => {
+export const submitVote = async (
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) => {
 	try {
 		const { pollId, votes, submittedVote } = req.body
 
@@ -203,9 +212,9 @@ export const submitVote = async (req: Request, res: Response) => {
 				missingFields += 'submittedVote, '
 			}
 
-			return res
-				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: `Missing required fields: ${missingFields}` })
+			return next(
+				new BadRequestError(`Missing required fields: ${missingFields}`),
+			)
 		}
 
 		// type check poll against Poll but without the id
@@ -251,8 +260,6 @@ export const submitVote = async (req: Request, res: Response) => {
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error: unknown) {
 		logger.error(`[dynamo]: Error submitting vote: ${error}`)
-		return res
-			.status(StatusCodes.BAD_REQUEST)
-			.json({ message: 'Error submitting vote' })
+		return next(new BadRequestError('Error submitting vote'))
 	}
 }
