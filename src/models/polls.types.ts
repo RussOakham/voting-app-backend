@@ -59,6 +59,8 @@ export const pollSchema = createPollSchema.extend({
 
 export type Poll = z.infer<typeof pollSchema>
 
+export type PollWithoutId = Omit<Poll, 'id'>
+
 export const submittedVoteSchema = z.object({
 	userId: z.string(),
 	optionId: z.string(),

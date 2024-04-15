@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { Express } from 'express'
 
+import { errorHandler } from '../middlewares/error-handler.middleware'
 import router from '../router/index.routes'
 
 import { pino } from './logger'
@@ -27,6 +28,8 @@ function createServer() {
 	app.use(pino)
 
 	app.use('/', router())
+
+	app.use(errorHandler)
 
 	return app
 }

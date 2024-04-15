@@ -2,22 +2,22 @@ import {
 	CreateTableCommand,
 	CreateTableCommandInput,
 	DescribeTableCommand,
-	GetItemCommand,
-	GetItemCommandInput,
-	PutItemCommand,
-	PutItemCommandInput,
 	ResourceNotFoundException,
 	UpdateItemCommand,
 	UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb'
-import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
+import { marshall } from '@aws-sdk/util-dynamodb'
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import { v1 as uuidV1 } from 'uuid'
 
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../db/dynamo'
-import { Poll, SubmittedVote } from '../models/polls.types'
+import { CreatePoll, Poll, SubmittedVote } from '../models/polls.types'
+import {
+	createPoll as createPollService,
+	getItemData,
+	getTableData,
+} from '../services/polls.service'
 import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors'
 import { pino } from '../utils/logger'
 import { io, SocketPayload } from '../utils/socket'
@@ -75,14 +75,11 @@ export const getPolls = async (
 		const tableName = TABLE_NAME
 
 		if (!tableName) {
+			logger.warn('error thrown')
 			return next(new BadRequestError('Missing required fields'))
 		}
 
-		const params: ScanCommandInput = {
-			TableName: tableName,
-		}
-
-		const result = await dynamoDocClient.send(new ScanCommand(params))
+		const result = await getTableData(tableName)
 
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error) {
@@ -100,25 +97,13 @@ export const getPollById = async (
 		const { pollId } = req.params
 
 		if (!pollId) {
-			return res
-				.status(StatusCodes.BAD_REQUEST)
-				.json({ message: 'Missing required fields' })
+			console.log('error called')
+			return next(new BadRequestError('Missing required fields'))
 		}
 
-		const params: GetItemCommandInput = {
-			TableName: TABLE_NAME,
-			Key: marshall({ id: pollId }),
-		}
+		const response = await getItemData(TABLE_NAME, pollId)
 
-		const result = await dynamoDocClient.send(new GetItemCommand(params))
-
-		const poll = result.Item
-
-		if (!poll) {
-			return next(new NotFoundError('Poll not found'))
-		}
-
-		return res.status(StatusCodes.OK).json(unmarshall(poll))
+		return res.status(StatusCodes.OK).json(response)
 	} catch (error) {
 		logger.error(`[dynamo]: Error getting poll by id: ${error}`)
 		return next(new NotFoundError('Error fetching poll data by id'))
@@ -147,39 +132,14 @@ export const createPoll = async (
 			)
 		}
 
-		// type check poll against Poll but without the id
-		// this is because the id is generated in the function
-
-		type PollWithoutId = Omit<Poll, 'id'>
-
-		const poll: PollWithoutId = {
+		const poll: CreatePoll = {
 			question,
 			options,
 			votes,
 			createdBy,
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
 		}
 
-		const uuid = uuidV1()
-
-		const params: PutItemCommandInput = {
-			TableName: TABLE_NAME,
-			Item: marshall({ id: uuid, ...poll }),
-			ConditionExpression: 'attribute_not_exists(id)',
-		}
-
-		const result = await dynamoDocClient.send(new PutItemCommand(params))
-
-		logger.info(`[dynamo]: Created poll: ${JSON.stringify(poll)}`)
-
-		const socketPayload: SocketPayload = {
-			key: 'polls',
-			action: 'create',
-			data: poll,
-		}
-
-		io.getIo().emit('message', socketPayload)
+		const result = await createPollService(TABLE_NAME, poll)
 
 		return res.status(StatusCodes.CREATED).json(result)
 	} catch (error: unknown) {
