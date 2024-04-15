@@ -6,25 +6,21 @@ import {
 	GetItemCommandInput,
 	PutItemCommand,
 	PutItemCommandInput,
+	ResourceNotFoundException,
 	UpdateItemCommand,
 	UpdateItemCommandInput,
-	ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
 import { NextFunction, Request, Response } from 'express'
-import { v1 as uuidV1 } from 'uuid'
 import { StatusCodes } from 'http-status-codes'
+import { v1 as uuidV1 } from 'uuid'
 
 import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../db/dynamo'
 import { Poll, SubmittedVote } from '../models/polls.types'
+import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors'
 import { pino } from '../utils/logger'
 import { io, SocketPayload } from '../utils/socket'
-import {
-	BadRequestError,
-	ConflictError,
-	NotFoundError,
-} from '../utils/errors'
 
 const { logger } = pino
 

@@ -6,9 +6,9 @@ import { NotFoundError } from './not-found'
 import { TeapotError } from './teapot-error'
 
 export {
+	BadRequestError,
 	ConflictError,
 	CustomError,
-	BadRequestError,
 	DatabaseError,
 	NotFoundError,
 	TeapotError,

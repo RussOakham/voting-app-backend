@@ -1,40 +1,21 @@
-import bodyParser from 'body-parser'
-import compression from 'compression'
-import cookieParser from 'cookie-parser'
-import cors from 'cors'
 import dotenv from 'dotenv'
-import express, { Express } from 'express'
-import { pino } from './utils/logger'
-import { io as ioSocket } from './utils/socket'
-import { createServer } from 'http'
-
-import router from './router/index.routes'
-import { errorHandler } from './middlewares/error-handler.middleware'
-
 dotenv.config()
 
-const app: Express = express()
-const port = process.env.PORT
+import config from 'config'
+import { createServer as createHttpServer } from 'http'
+
+import { errorHandler } from './middlewares/error-handler.middleware'
+import { pino } from './utils/logger'
+import createServer from './utils/server'
+import { io as ioSocket } from './utils/socket'
+
 const { logger } = pino
 
-app.use(
-	cors({
-		credentials: true,
-	}),
-)
-app.use(compression())
-app.use(cookieParser())
-app.use(
-	bodyParser.urlencoded({
-		extended: true,
-	}),
-)
-app.use(bodyParser.json())
-app.use(pino)
+const port = config.get<number>('port')
 
-app.use('/', router())
+const app = createServer()
 
-const httpServer = createServer(app)
+const httpServer = createHttpServer(app)
 
 const io = ioSocket.init(httpServer)
 

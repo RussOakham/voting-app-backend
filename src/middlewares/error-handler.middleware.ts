@@ -1,4 +1,4 @@
-import { ErrorRequestHandler, NextFunction, Request, Response } from 'express'
+import { ErrorRequestHandler, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 
 import { CustomError } from '../utils/errors/custom-error'
@@ -7,7 +7,6 @@ export const errorHandler: ErrorRequestHandler = (
 	error: Error,
 	req: Request,
 	res: Response,
-	next: NextFunction,
 ) => {
 	// Error handling logic
 	if (error instanceof CustomError) {

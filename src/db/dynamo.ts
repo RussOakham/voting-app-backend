@@ -4,9 +4,11 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const accessKeyId = process.env.AWS_ACCESS_KEY_ID
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-const AWS_DEFAULT_REGION = process.env.AWS_DEFAULT_REGION
+import config from 'config'
+
+const accessKeyId = config.get<string>('AWS_ACCESS_KEY_ID')
+const secretAccessKey = config.get<string>('AWS_SECRET_ACCESS_KEY')
+const AWS_DEFAULT_REGION = config.get<string>('AWS_DEFAULT_REGION')
 
 export const TABLE_NAME = 'voting-app-api'
 
