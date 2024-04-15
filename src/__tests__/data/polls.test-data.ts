@@ -1,5 +1,5 @@
 import { ScanCommandOutput } from '@aws-sdk/lib-dynamodb'
-import { CreatePoll, Poll } from 'models/polls.types'
+import { CreatePoll, Poll, SubmittedVote } from 'models/polls.types'
 
 export const mockPolls: Poll[] = [
 	{
@@ -73,4 +73,10 @@ export const createdPollMock: Poll = {
 	id: '123',
 	createdAt: '2024-04-15T15:04:49.679Z',
 	updatedAt: '2024-04-15T15:04:49.679Z',
+}
+
+export const submittedVoteMock: SubmittedVote = {
+	userId: '123',
+	optionId: '1',
+	optionText: 'Toyota',
 }

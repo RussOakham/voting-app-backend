@@ -3,10 +3,17 @@ import {
 	GetItemCommandInput,
 	PutItemCommand,
 	PutItemCommandInput,
+	UpdateItemCommand,
+	UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb'
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb'
-import { PollWithoutId } from 'models/polls.types'
+import {
+	PollUpdateVotes,
+	PollWithoutId,
+	SubmittedVote,
+	Vote,
+} from 'models/polls.types'
 import { v1 as uuidV1 } from 'uuid'
 
 import { dynamoDocClient } from '../db/dynamo'
@@ -84,5 +91,55 @@ export const createPoll = async (
 		return result
 	} catch (error) {
 		throw new Error(`Error creating item: ${error}`)
+	}
+}
+
+export const updatePollVotes = async (
+	tableName: string,
+	pollId: string,
+	votes: Vote[],
+	submittedVote: SubmittedVote,
+) => {
+	try {
+		const pollUpdate: PollUpdateVotes = {
+			id: pollId,
+			votes,
+		}
+
+		const newVote: SubmittedVote = submittedVote
+
+		pollUpdate.votes.push({
+			id: uuidV1(),
+			option: newVote.optionText,
+			user: newVote.userId,
+			createdAt: new Date().toISOString(),
+		})
+
+		const params: UpdateItemCommandInput = {
+			TableName: tableName,
+			Key: marshall({ id: pollUpdate.id }),
+			UpdateExpression: 'SET votes = :votes',
+			ExpressionAttributeValues: marshall({ ':votes': pollUpdate.votes }),
+			ConditionExpression: 'attribute_exists(id)',
+		}
+
+		const result = await dynamoDocClient.send(new UpdateItemCommand(params))
+
+		logger.info(
+			`[dynamo]: Updated poll votes: ${JSON.stringify(submittedVote)}`,
+		)
+
+		const socketPayload: SocketPayload = {
+			id: pollId,
+			key: 'poll',
+			action: 'vote',
+			data: pollUpdate,
+		}
+
+		io.getIo().emit('message', socketPayload)
+
+		return result
+	} catch (error) {
+		throw new Error(`Error updating item: ${error}`)
 	}
 }

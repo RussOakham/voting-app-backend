@@ -10,6 +10,7 @@ import {
 	createPollMock,
 	mockPolls,
 	mockPollsApiResponse,
+	submittedVoteMock,
 } from './data/polls.test-data'
 
 jest.mock('../db/dynamo', () => ({
@@ -203,6 +204,85 @@ describe('Polls', () => {
 					status: 400,
 					message:
 						'[{"message":"body.options is At most 5 options are allowed"}]',
+				})
+			})
+		})
+	})
+
+	describe('POST /submit-vote', () => {
+		it('should return 200 and the updated poll', async () => {
+			// Arrange
+			const updatePollVotesSpy = jest
+				.spyOn(getPollsClient, 'updatePollVotes')
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore
+				.mockReturnValueOnce(createdPollMock)
+			const pollId = '123'
+			const votes = createdPollMock.votes
+			const submittedVote = submittedVoteMock
+
+			// Act
+			const { statusCode, body } = await supertest(httpServer)
+				.post('/submit-vote')
+				.send({ pollId, votes, submittedVote })
+
+			// Assert
+			expect(statusCode).toBe(200)
+			expect(body).toEqual(createdPollMock)
+			expect(updatePollVotesSpy).toHaveBeenCalledWith(
+				'polls-test',
+				pollId,
+				votes,
+				submittedVote,
+			)
+		})
+
+		describe('when the poll is not updated', () => {
+			it('should return 400 and an error message', async () => {
+				// Arrange
+				const updatePollVotesSpy = jest
+					.spyOn(getPollsClient, 'updatePollVotes')
+					.mockRejectedValueOnce(new Error('Error submitting vote'))
+				const pollId = '123'
+				const votes = createdPollMock.votes
+				const submittedVote = submittedVoteMock
+
+				// Act
+				const { statusCode, body } = await supertest(httpServer)
+					.post('/submit-vote')
+					.send({ pollId, votes, submittedVote })
+
+				// Assert
+				expect(statusCode).toBe(400)
+				expect(body).toEqual({
+					status: 400,
+					message: 'Error submitting vote',
+				})
+				expect(updatePollVotesSpy).toHaveBeenCalledWith(
+					'polls-test',
+					pollId,
+					votes,
+					submittedVote,
+				)
+			})
+		})
+
+		describe('when the poll is missing required fields', () => {
+			it('should return 400 and an error message', async () => {
+				// Arrange
+				const pollId = '123'
+				const votes = createdPollMock.votes
+
+				// Act
+				const { statusCode, body } = await supertest(httpServer)
+					.post('/submit-vote')
+					.send({ pollId, votes })
+
+				// Assert
+				expect(statusCode).toBe(400)
+				expect(body).toEqual({
+					status: 400,
+					message: '[{"message":"body.submittedVote is Required"}]',
 				})
 			})
 		})

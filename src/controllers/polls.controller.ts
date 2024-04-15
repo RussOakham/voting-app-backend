@@ -3,24 +3,20 @@ import {
 	CreateTableCommandInput,
 	DescribeTableCommand,
 	ResourceNotFoundException,
-	UpdateItemCommand,
-	UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb'
-import { marshall } from '@aws-sdk/util-dynamodb'
 import { NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
-import { v1 as uuidV1 } from 'uuid'
 
-import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../db/dynamo'
-import { CreatePoll, Poll, SubmittedVote } from '../models/polls.types'
+import { dynamoClient, TABLE_NAME } from '../db/dynamo'
+import { CreatePoll } from '../models/polls.types'
 import {
 	createPoll as createPollService,
 	getItemData,
 	getTableData,
+	updatePollVotes,
 } from '../services/polls.service'
 import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors'
 import { pino } from '../utils/logger'
-import { io, SocketPayload } from '../utils/socket'
 
 const { logger } = pino
 
@@ -173,45 +169,12 @@ export const submitVote = async (
 			)
 		}
 
-		// type check poll against Poll but without the id
-		// this is because the id is generated in the function
-
-		type PollUpdateVotes = Pick<Poll, 'id' | 'votes'>
-
-		const pollUpdate: PollUpdateVotes = {
-			id: pollId,
+		const result = await updatePollVotes(
+			TABLE_NAME,
+			pollId,
 			votes,
-		}
-
-		const newVote: SubmittedVote = submittedVote
-
-		pollUpdate.votes.push({
-			id: uuidV1(),
-			option: newVote.optionText,
-			user: newVote.userId,
-			createdAt: new Date().toISOString(),
-		})
-
-		const params: UpdateItemCommandInput = {
-			TableName: TABLE_NAME,
-			Key: marshall({ id: pollUpdate.id }),
-			UpdateExpression: 'SET votes = :votes',
-			ExpressionAttributeValues: marshall({ ':votes': pollUpdate.votes }),
-			ConditionExpression: 'attribute_exists(id)',
-		}
-
-		const result = await dynamoDocClient.send(new UpdateItemCommand(params))
-
-		logger.info(`[dynamo]: Submitted vote: ${JSON.stringify(submittedVote)}`)
-
-		const socketPayload: SocketPayload = {
-			id: pollUpdate.id,
-			key: 'poll',
-			action: 'vote',
-			data: pollUpdate,
-		}
-
-		io.getIo().emit('message', socketPayload)
+			submittedVote,
+		)
 
 		return res.status(StatusCodes.OK).json(result)
 	} catch (error: unknown) {
