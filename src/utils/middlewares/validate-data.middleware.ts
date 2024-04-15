@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextFunction, Request, Response } from 'express'
 import { AnyZodObject, ZodError } from 'zod'
-import { StatusCodes } from 'http-status-codes'
+
+import { pino } from '../logger'
+import { BadRequestError, TeapotError } from '../errors'
+
+const { logger } = pino
 
 export const validateData =
 	(schema: AnyZodObject) =>
@@ -18,17 +22,13 @@ export const validateData =
 				const errorMessages = error.errors.map((issue) => ({
 					message: `${issue.path.join('.')} is ${issue.message}`,
 				}))
-				res
-					.status(StatusCodes.BAD_REQUEST)
-					.json({ error: 'Invalid data', message: errorMessages })
-				console.error(
+				logger.error(
 					`[middleware-validation]: Error Invalid Data: ${JSON.stringify(errorMessages)}`,
 				)
+				return next(new BadRequestError(JSON.stringify(errorMessages)))
 			} else {
-				res
-					.status(StatusCodes.INTERNAL_SERVER_ERROR)
-					.json({ error: 'Internal Server Error' })
-				console.error(`[middleware-validation]: Internal Server Error`)
+				logger.error(`[middleware-validation]: Internal Server Error`)
+				return next(new TeapotError())
 			}
 		}
 	}
