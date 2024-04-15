@@ -2,8 +2,8 @@
 import { NextFunction, Request, Response } from 'express'
 import { AnyZodObject, ZodError } from 'zod'
 
-import { pino } from '../logger'
-import { BadRequestError, TeapotError } from '../errors'
+import { pino } from '../utils/logger'
+import { BadRequestError, TeapotError } from '../utils/errors'
 
 const { logger } = pino
 

@@ -1,7 +1,7 @@
 import { ErrorRequestHandler, NextFunction, Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 
-import { CustomError } from '../errors/custom-error'
+import { CustomError } from '../utils/errors/custom-error'
 
 export const errorHandler: ErrorRequestHandler = (
 	error: Error,

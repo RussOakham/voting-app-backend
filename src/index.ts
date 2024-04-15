@@ -8,8 +8,8 @@ import { pino } from './utils/logger'
 import { io as ioSocket } from './utils/socket'
 import { createServer } from 'http'
 
-import pollsRoutes from './polls/routes/polls.routes'
-import { errorHandler } from './utils/middlewares/error-handler.middleware'
+import router from './router/index.routes'
+import { errorHandler } from './middlewares/error-handler.middleware'
 
 dotenv.config()
 
@@ -31,14 +31,6 @@ app.use(
 )
 app.use(bodyParser.json())
 app.use(pino)
-
-const router = () => {
-	const router = express.Router()
-
-	pollsRoutes(router)
-
-	return router
-}
 
 app.use('/', router())
 

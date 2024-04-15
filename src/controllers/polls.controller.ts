@@ -16,15 +16,15 @@ import { NextFunction, Request, Response } from 'express'
 import { v1 as uuidV1 } from 'uuid'
 import { StatusCodes } from 'http-status-codes'
 
-import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../../db/dynamo'
+import { dynamoClient, dynamoDocClient, TABLE_NAME } from '../db/dynamo'
 import { Poll, SubmittedVote } from '../models/polls.types'
-import { pino } from '../../utils/logger'
-import { io, SocketPayload } from '../../utils/socket'
+import { pino } from '../utils/logger'
+import { io, SocketPayload } from '../utils/socket'
 import {
 	BadRequestError,
 	ConflictError,
 	NotFoundError,
-} from '../../utils/errors'
+} from '../utils/errors'
 
 const { logger } = pino
 
