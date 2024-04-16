@@ -3,27 +3,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const http_1 = __importDefault(require("http"));
-const body_parser_1 = __importDefault(require("body-parser"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const compression_1 = __importDefault(require("compression"));
-const cors_1 = __importDefault(require("cors"));
 dotenv_1.default.config();
-const app = (0, express_1.default)();
-const port = process.env.PORT;
-app.use((0, cors_1.default)({
-    credentials: true,
-}));
-app.use((0, compression_1.default)());
-app.use((0, cookie_parser_1.default)());
-app.use(body_parser_1.default.urlencoded({
-    extended: true,
-}));
-app.use(body_parser_1.default.json());
-const server = http_1.default.createServer(app);
-app.listen(port, () => {
-    console.log(`[server]: Server is running at http://localhost:${port}`);
+const config_1 = __importDefault(require("config"));
+const http_1 = require("http");
+const logger_1 = require("./utils/logger");
+const server_1 = __importDefault(require("./utils/server"));
+const socket_1 = require("./utils/socket");
+const { logger } = logger_1.pino;
+const port = config_1.default.get('port');
+const app = (0, server_1.default)();
+const httpServer = (0, http_1.createServer)(app);
+const io = socket_1.io.init(httpServer);
+io.on('connection', (socket) => {
+    logger.info(`[socket]: Socket connected ${socket.id}`);
+    socket.on('disconnect', () => {
+        logger.info(`[socket]: Socket disconnected ${socket.id}`);
+    });
+});
+httpServer.listen(port, () => {
+    logger.info(`[server]: Server is running at http://localhost:${port}`);
 });
 //# sourceMappingURL=index.js.map
