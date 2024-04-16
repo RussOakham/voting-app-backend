@@ -8,11 +8,15 @@ jobs:
         node-version: [20.x]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+     - uses: actions/checkout@v3
+     - uses: pnpm/action-setup@v3Ï
+       with: 
+              version: 8
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.nÏode-version }}Ï
+        cache: 'pnpm'Ï
       - name: pnpm install and build
         run: |
           pnpm i --frozen-lockfile
