@@ -22,7 +22,7 @@ jobs:
       - name: pnpm install and build
         run: |
           pnpm i --frozen-lockfile
-          pnpm run build --if-present
+          pnpm run build
         env:
           CI: true
       - name: zip
@@ -35,5 +35,5 @@ jobs:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_region: eu-west-1
-          function_name: my-function
+          function_name: node-voting-pp
           zip_file: bundle.zip
